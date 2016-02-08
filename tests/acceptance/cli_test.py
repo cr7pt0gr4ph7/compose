@@ -137,12 +137,18 @@ class CLITestCase(DockerClientTestCase):
     def lookup(self, container, hostname):
         return self.execute(container, ["nslookup", hostname]) == 0
 
+
+class HelpCommandTest(CLITestCase):
+
     def test_help(self):
         self.base_dir = 'tests/fixtures/no-composefile'
         result = self.dispatch(['help', 'up'], returncode=1)
         assert 'Usage: up [options] [SERVICE...]' in result.stderr
         # Prevent tearDown from trying to create a project
         self.base_dir = None
+
+
+class ConfigCommandTest(CLITestCase):
 
     # TODO: this shouldn't be v2-dependent
     @v2_only()
@@ -197,6 +203,35 @@ class CLITestCase(DockerClientTestCase):
         }
         assert output == expected
 
+    def load_yaml_from_file(self, filename):
+        filepath = os.path.join(self.base_dir, filename)
+        with open(filepath, 'r') as fh:
+            return yaml.safe_load(fh)
+
+    def validate_effective_config(self, dirname):
+        result = self.dispatch(['config'])
+        # assert there are no python objects encoded in the output
+        assert '!!' not in result.stdout
+
+        output = yaml.load(result.stdout)
+        expected = self.load_yaml_from_file('result.yml')
+        assert output == expected
+
+    # TODO: this shouldn't be v2-dependent
+    @v2_only()
+    def test_config_commands_with_multiple_files(self):
+        self.base_dir = 'tests/fixtures/v2-multiple-composefiles/commands'
+        validate_effective_config
+
+    # TODO: this shouldn't be v2-dependent
+    @v2_only()
+    def test_config_entrypoints_with_multiple_files(self):
+        self.base_dir = 'tests/fixtures/v2-multiple-composefiles/entrypoints'
+        validate_effective_config
+
+
+class PsCommandTest(CLITestCase):
+
     def test_ps(self):
         self.project.get_service('simple').create_container()
         result = self.dispatch(['ps'])
@@ -224,6 +259,9 @@ class CLITestCase(DockerClientTestCase):
         self.assertNotIn('multiplecomposefiles_another_1', result.stdout)
         self.assertIn('multiplecomposefiles_yetanother_1', result.stdout)
 
+
+class PullCommandTest(CLITestCase):
+
     def test_pull(self):
         result = self.dispatch(['pull'])
         assert sorted(result.stderr.split('\n'))[1:] == [
@@ -248,6 +286,9 @@ class CLITestCase(DockerClientTestCase):
         assert 'Pulling another (nonexisting-image:latest)...' in result.stderr
         assert 'Error: image library/nonexisting-image' in result.stderr
         assert 'not found' in result.stderr
+
+
+class BuildCommandTest(CLITestCase):
 
     def test_build_plain(self):
         self.base_dir = 'tests/fixtures/simple-dockerfile'
@@ -312,6 +353,9 @@ class CLITestCase(DockerClientTestCase):
         ]
         assert not containers
 
+
+class CreateCommandTest(CLITestCase):
+
     def test_create(self):
         self.dispatch(['create'])
         service = self.project.get_service('simple')
@@ -358,6 +402,9 @@ class CLITestCase(DockerClientTestCase):
             ['create', '--force-recreate', '--no-recreate'],
             returncode=1)
 
+
+class DownCommandTest(CLITestCase):
+
     def test_down_invalid_rmi_flag(self):
         result = self.dispatch(['down', '--rmi', 'bogus'], returncode=1)
         assert '--rmi flag must be' in result.stderr
@@ -378,6 +425,9 @@ class CLITestCase(DockerClientTestCase):
         assert 'Removing image busybox' not in result.stderr
         assert 'Removing network v2full_default' in result.stderr
         assert 'Removing network v2full_front' in result.stderr
+
+
+class UpCommandTest(CLITestCase):
 
     def test_up_detached(self):
         self.dispatch(['up', '-d'])
@@ -718,6 +768,9 @@ class CLITestCase(DockerClientTestCase):
         os.kill(proc.pid, signal.SIGTERM)
         wait_on_condition(ContainerCountCondition(self.project, 0))
 
+
+class RunCommandTest(CLITestCase):
+
     def test_run_service_without_links(self):
         self.base_dir = 'tests/fixtures/links-composefile'
         self.dispatch(['run', 'console', '/bin/true'])
@@ -1001,6 +1054,9 @@ class CLITestCase(DockerClientTestCase):
             'simplecomposefile_simple_run_1',
             running=False))
 
+
+class RmCommandTest(CLITestCase):
+
     def test_rm(self):
         service = self.project.get_service('simple')
         service.create_container()
@@ -1014,6 +1070,9 @@ class CLITestCase(DockerClientTestCase):
         self.assertEqual(len(service.containers(stopped=True)), 1)
         self.dispatch(['rm', '-f'], None)
         self.assertEqual(len(service.containers(stopped=True)), 0)
+
+
+class StopCommandTest(CLITestCase):
 
     def test_stop(self):
         self.dispatch(['up', '-d'], None)
@@ -1041,6 +1100,9 @@ class CLITestCase(DockerClientTestCase):
     def test_start_no_containers(self):
         result = self.dispatch(['start'], returncode=1)
         assert 'No containers to start' in result.stderr
+
+
+class UpCommandLoggingTest(CLITestCase):
 
     @v2_only()
     def test_up_logging(self):
@@ -1071,6 +1133,9 @@ class CLITestCase(DockerClientTestCase):
         self.assertEqual(log_config.get('Type'), 'json-file')
         self.assertEqual(log_config.get('Config')['max-size'], '10m')
 
+
+class PauseUnpauseCommandTest(CLITestCase):
+
     def test_pause_unpause(self):
         self.dispatch(['up', '-d'], None)
         service = self.project.get_service('simple')
@@ -1090,8 +1155,14 @@ class CLITestCase(DockerClientTestCase):
         result = self.dispatch(['unpause'], returncode=1)
         assert 'No containers to unpause' in result.stderr
 
+
+class LogsCommandTest(CLITestCase):
+
     def test_logs_invalid_service_name(self):
         self.dispatch(['logs', 'madeupname'], returncode=1)
+
+
+class KillCommandTest(CLITestCase):
 
     def test_kill(self):
         self.dispatch(['up', '-d'], None)
@@ -1127,6 +1198,9 @@ class CLITestCase(DockerClientTestCase):
         self.assertEqual(len(service.containers(stopped=True)), 1)
         self.assertFalse(service.containers(stopped=True)[0].is_running)
 
+
+class RestartCommandTest(CLITestCase):
+
     def test_restart(self):
         service = self.project.get_service('simple')
         container = service.create_container()
@@ -1156,6 +1230,9 @@ class CLITestCase(DockerClientTestCase):
         result = self.dispatch(['restart'], returncode=1)
         assert 'No containers to restart' in result.stderr
 
+
+class ScaleCommandTest(TestCase):
+
     def test_scale(self):
         project = self.project
 
@@ -1177,6 +1254,9 @@ class CLITestCase(DockerClientTestCase):
         self.dispatch(['scale', 'simple=0', 'another=0'])
         self.assertEqual(len(project.get_service('simple').containers()), 0)
         self.assertEqual(len(project.get_service('another').containers()), 0)
+
+
+class PortCommandTest(CLITestCase):
 
     def test_port(self):
         self.base_dir = 'tests/fixtures/ports-composefile'
@@ -1210,6 +1290,9 @@ class CLITestCase(DockerClientTestCase):
         self.assertEqual(get_port(3000, index=2), containers[1].get_local_port(3000))
         self.assertEqual(get_port(3002), "")
 
+
+class EventsCommandTest(CLITestCase):
+
     def test_events_json(self):
         events_proc = start_process(self.base_dir, ['events', '--json'])
         self.dispatch(['up', '-d'])
@@ -1239,6 +1322,9 @@ class CLITestCase(DockerClientTestCase):
         assert expected_template.format('start', container.id) in lines[1]
         assert lines[0].startswith(datetime.date.today().isoformat())
 
+
+class PathResolutionTest(CLITestCase):
+
     def test_env_file_relative_to_compose_file(self):
         config_path = os.path.abspath('tests/fixtures/env-file/docker-compose.yml')
         self.dispatch(['-f', config_path, 'up', '-d'], None)
@@ -1260,6 +1346,9 @@ class CLITestCase(DockerClientTestCase):
         actual_host_path = container.get_mount('/container-path')['Source']
         components = actual_host_path.split('/')
         assert components[-2:] == ['home-dir', 'my-volume']
+
+
+class MultipleComposeFilesTest(CLITestCase):
 
     def test_up_with_default_override_file(self):
         self.base_dir = 'tests/fixtures/override-files'

@@ -1,0 +1,23 @@
+version: 2
+services:
+  # Overridden services
+  override_string_with_string:
+    entrypoint: "override as string",
+    image: dummy
+
+  override_string_with_list:
+    entrypoint: "override as string"
+    image: dummy
+
+  override_list_with_string:
+    entrypoint: ["override", "as", "list"]
+    image: dummy
+
+  # Overridefile-only services
+  override_only_string:
+    entrypoint: "override as string"
+    image: dummy
+
+  override_only_list:
+    entrypoint: ["override", "as", "list"]
+    image: dummy

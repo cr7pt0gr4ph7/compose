@@ -1,0 +1,23 @@
+version: 2
+services:
+  # Overridden services
+  override_string_with_string:
+    command: "override as string",
+    image: dummy
+
+  override_string_with_list:
+    command: "override as string"
+    image: dummy
+
+  override_list_with_string:
+    command: ["override", "as", "list"]
+    image: dummy
+
+  # Overridefile-only services
+  override_only_string:
+    command: "override as string"
+    image: dummy
+
+  override_only_list:
+    command: ["override", "as", "list"]
+    image: dummy

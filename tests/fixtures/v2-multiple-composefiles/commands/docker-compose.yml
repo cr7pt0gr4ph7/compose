@@ -1,0 +1,23 @@
+version: 2
+services:
+  # Basefile-only services
+  base_only_string:
+    command: "base as string"
+    image: dummy
+
+  base_only_list:
+    command: ["base", "as", "list"]
+    image: dummy
+
+  # Overridden services
+  override_string_with_string:
+    command: "base as string",
+    image: dummy
+
+  override_string_with_list:
+    command: "base as string"
+    image: dummy
+
+  override_list_with_string:
+    command: ["base", "as", "string"]
+    image: dummy
