@@ -1,0 +1,73 @@
+version: 2
+services:
+  complicated_properties:
+    image
+    build
+    extends
+    logging
+    ulimits
+---
+  merged_lists:
+    cap_add
+    cap_drop
+    expose
+    networks
+    volumes
+    depends_on (unmerged)
+    security_opt
+    extra_hosts
+    volumes_from (unmerged)
+  list_or_string:
+    dns
+    dns_search
+    env_file
+  merged_mappings:
+    devices
+    external_links
+    links (unmerged)
+    ports
+  dict_or_list:
+    environment
+    labels
+  scalar_properties:
+    # log_driver (v1 only)
+    # log_opt (v1 only)
+    # net (v1 only)
+    network_mode (v2 only)
+    pid
+    stop_signal
+    volume_driver (will be deprecated?)
+
+  unmerged_list_or_string:
+    command
+    entrypoint
+
+  replaced
+
+  scalar_properties:
+    # Scalar Properties
+    container_name: my-web-container
+    cgroup_parent: m-executor-abcd
+
+    # Properties which are passed to Docker client as-is
+    cpu_shares: 73
+    cpu_quota: 50000
+    cpuset: 0,1
+
+    user: postgresql
+    working_dir: /code
+
+    domainname: foo.com
+    hostname: foo
+    ipc: host
+    mac_address: 02:42:ac:11:65:43
+
+    mem_limit: 1000000000
+    memswap_limit: 2000000000
+    privileged: true
+
+    restart: always
+
+    read_only: true
+    stdin_open: true
+    tty: true
